@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using IniParser;
 using IniParser.Model;
+using System.Text.RegularExpressions;
 
 namespace C_Box
 {
@@ -77,8 +78,76 @@ namespace C_Box
             return BitConverter.ToString(Encoding.ASCII.GetBytes(data)).Replace('-', ' ');
         }
 
+        public static string[] ExtractGPSMessages(string data)
+        {
+            if (data.Length == 0)
+                return new string[] { };
+            return data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("$GP") && x.Contains("*")).ToArray();
+        }
+
+        public static string[] SortGPSMessagesBySNRDesc(string[] messages)
+        {
+            string[] ordered = null;
+            if (messages.Length == 0)
+                return new string[] { };
+            ordered = messages.OrderBy(x => Convert.ToInt32(x.Split(',').Last().Remove(x.Split(',').Last().IndexOf("*")))).ToArray();
+            return ordered;
+        }
+
+        public static string[] SortGLONASSMessagesBySNRDesc(string[] messages)
+        {
+            string[] ordered = null;
+            if (messages.Length == 0)
+                return new string[] { };
+            ordered = messages.OrderBy(x => Convert.ToInt32(x.Split(',').Last().Remove(x.Split(',').Last().IndexOf("*")))).ToArray();
+            return ordered;
+        }
+
+        public static string[] ExtractGLONASSMessages(string data)
+        {
+            if (data.Length == 0)
+                return new string[] { };
+            return data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("$GL")).ToArray();
+        }
+
+        public static int ExtractIDFromGPSMessage(string message)
+        {
+            string id = "";
+            if (message.Length == 0)
+                return -1;
+            if (!message.StartsWith("$GP") || !message.Contains("*"))
+                return -1;
+            id = message.Split(',')[4];
+            return Convert.ToInt32(id);
+        }
+
+        public static int ExtractSNRFromGPSMessage(string message)
+        {
+            if (message.Length == 0)
+                return -1;
+            if (!message.StartsWith("$GP") || !message.Contains("*"))
+                return -1;
+            string snr = message.Split(',').Last();
+            snr = snr.Remove(snr.IndexOf("*"));
+            return Convert.ToInt32(snr);
+        }
+
+        public static int ExtractSNRFromGLONASSMessage(string message)
+        {
+            if (message.Length == 0)
+                return -1;
+            if (!message.StartsWith("$GL") || !message.Contains("*"))
+                return -1;
+            string snr = message.Split(',').Last();
+            snr = snr.Remove(snr.IndexOf("*"));
+            return Convert.ToInt32(snr);
+        }
+
         public static string ConvertHexASCIIToChar(string data)
         {
+            if (data.Length == 0)
+                return "";
+            data = data.Replace("  ", " ").Trim();
             string[] values = data.Split(' ');
             string result = "";
             foreach (string s in values)
@@ -217,8 +286,8 @@ namespace C_Box
         public static string ExtractPCUIInterfacePort(string data)
         {
             if (data.Length == 0)
-                return null;
-            string port = data.Replace("Name \r\r ", "").Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(0);
+                return "";
+            string port = data.Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(1).Trim();
             port = port.Remove(0, port.IndexOf("(") + 1).Replace(")", "");
             return port;
         }
@@ -226,8 +295,8 @@ namespace C_Box
         public static string ExtractSerialCPort(string data)
         {
             if (data.Length == 0)
-                return null;
-            string port = data.Replace("Name \r\r ", "").Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(2);
+                return "";
+            string port = data.Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(4).Trim();
             port = port.Remove(0, port.IndexOf("(") + 1).Replace(")", "");
             return port;
         }
@@ -235,8 +304,8 @@ namespace C_Box
         public static string ExtractSerialBPort(string data)
         {
             if (data.Length == 0)
-                return null;
-            string port = data.Replace("Name \r\r ", "").Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(4);
+                return "";
+            string port = data.Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(7).Trim();
             port = port.Remove(0, port.IndexOf("(") + 1).Replace(")", "");
             return port;
         }
@@ -244,17 +313,22 @@ namespace C_Box
         public static string Extract3GApplicationPort(string data)
         {
             if (data.Length == 0)
-                return null;
-            string port = data.Replace("Name \r\r ", "").Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(6);
+                return "";
+            string port = data.Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(10).Trim();
             port = port.Remove(0, port.IndexOf("(") + 1).Replace(")", "");
             return port;
+        }
+
+        public static void WriteToLog(string path, string data)
+        {
+            File.WriteAllText(path, data);
         }
 
         public static string ExtractApplicationInterfacePort(string data)
         {
             if (data.Length == 0)
                 return null;
-            string port = data.Replace("Name \r\r ", "").Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(7);
+            string port = data.Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(11).Trim();
             port = port.Remove(0, port.IndexOf("(") + 1).Replace(")", "");
             return port;
         }
@@ -425,6 +499,58 @@ namespace C_Box
             {
                 throw e;
             }
+        }
+
+        public static string ExtractIMEIFromLog(string logPath)
+        {
+            string lines = "";
+            string imei = "";
+            if (!File.Exists(logPath))
+                return "";
+            lines = File.ReadAllText(logPath);
+            Match match = Regex.Match(lines, @"IMEI\r\n([0-9]+\r\n\r\nOK)", RegexOptions.IgnoreCase);
+            if (match.Success)
+                imei = match.Value.Replace("IMEI\r\n", "").Replace("\r\n\r\nOK", "").Trim();
+            return imei;
+        }
+
+        public static string ExtractIMSIFromLog(string logPath)
+        {
+            string lines = "";
+            string imsi = "";
+            if (!File.Exists(logPath))
+                return "";
+            lines = File.ReadAllText(logPath);
+            Match match = Regex.Match(lines, @"IMSI\r\n([0-9]+\r\n\r\nOK)", RegexOptions.IgnoreCase);
+            if (match.Success)
+                imsi = match.Value.Replace("IMSI\r\n", "").Replace("\r\n\r\nOK", "").Trim();
+            return imsi;
+        }
+
+        public static string ExtractICCIDFromLog(string logPath)
+        {
+            string lines = "";
+            string iccid = "";
+            if (!File.Exists(logPath))
+                return "";
+            lines = File.ReadAllText(logPath);
+            Match match = Regex.Match(lines, @"ICCID\r\n\^ICCID:\s([0-9]+\r\n\r\nOK)", RegexOptions.IgnoreCase);
+            if (match.Success)
+                iccid = match.Value.Replace("ICCID\r\n", "").Replace("^ICCID: ", "").Replace("\r\n\r\nOK", "").Trim();
+            return iccid;
+        }
+
+        public static string ExtractEUICCIDFromLog(string logPath)
+        {
+            string lines = "";
+            string euiccid = "";
+            if (!File.Exists(logPath))
+                return "";
+            lines = File.ReadAllText(logPath);
+            Match match = Regex.Match(lines, @"\+CSIM\:\s22\,\""([0-9A-F]+)\""\r\n\r\nOK", RegexOptions.IgnoreCase);
+            if (match.Success)
+                euiccid = match.Value.Replace("+CSIM: 22,\"", "").Replace("\"\r\n\r\nOK", "").Trim();
+            return euiccid;
         }
     }
 }
