@@ -1,19 +1,74 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using IniParser;
 using IniParser.Model;
 using System.Text.RegularExpressions;
+using System.Net;
+using System.Net.NetworkInformation;
 
 namespace C_Box
 {
     public static class Utilities
     {
+        public static bool Ping(string ipAddress)
+        {
+            if (ipAddress.Length == 0)
+                return false;
+            Ping ping;
+            PingReply reply;
+            ping = new Ping();
+            try
+            {
+                reply = ping.Send(ipAddress);
+                if (reply.Status != IPStatus.Success)
+                {
+                    ping.Dispose();
+                    return false;
+                }
+                ping.Dispose();
+                return true;
+            }
+            catch (PingException e)
+            {
+                if (ping != null)
+                    ping.Dispose();
+                throw e;
+            }
+            catch (InvalidOperationException e)
+            {
+                if (ping != null)
+                    ping.Dispose();
+                throw e;
+            }
+        }
+
+        public static string[] GetSectionFromConfigurationFile(string file, string section)
+        {
+            if (!File.Exists(file))
+                return null;
+            if (string.IsNullOrEmpty(section))
+                return null;
+            int counter = 0;
+            FileIniDataParser parser;
+            IniData data;
+            KeyData[] keys;
+            string[] sectionKeys;
+            parser = new FileIniDataParser();
+            data = parser.ReadFile(file);
+            keys = data[section].ToArray();
+            sectionKeys = new string[keys.Length];
+            foreach (KeyData key in keys)
+            {
+                sectionKeys[counter] = key.Value;
+                counter++;
+            }
+            return sectionKeys;
+        }
+
         public static string GetKeyFromConfigurationFile(string file, string section, string key)
         {
             if (!File.Exists(file))
@@ -58,6 +113,35 @@ namespace C_Box
             return Convert.ToInt32(hexNum, 16);
         }
 
+        public static string ConvertInt32ToHexStringWithSpace(uint value)
+        {
+            string hex = Convert.ToString(value, 16);
+            string aux = "";
+            int residue = hex.Length % 8;
+            if (residue != 0)
+                hex = hex.PadLeft(hex.Length + residue, '0');
+            for (int i = 0; i < hex.Length / 2; i += 2)
+            {
+                aux = hex.Insert(i + 2, " ").Trim();
+            }
+            return aux;
+        }
+
+        public static string ConvertInt16ToHexStringWithSpace(ushort value)
+        {
+
+            string hex = Convert.ToString(value, 16);
+            string aux = "";
+            int residue = hex.Length % 2;
+            if (residue != 0)
+                hex = hex.PadLeft(hex.Length + residue, '0');
+            for (int i = 0; i < hex.Length / 2; i += 2)
+            {
+                aux = hex.Insert(i + 2, " ").Trim();
+            }
+            return aux;
+        }
+
         public static string ConvertHexStringWithSpecifierToHexStringWithSpace(string hex)
         {
             if (string.IsNullOrEmpty(hex) || string.IsNullOrWhiteSpace(hex))
@@ -73,9 +157,19 @@ namespace C_Box
             return "";
         }
 
-        public static string ConvertStringToDecimalASCII(string data)
+        public static string ConvertASCIIStringToHex(string data)
         {
             return BitConverter.ToString(Encoding.ASCII.GetBytes(data)).Replace('-', ' ');
+        }
+
+        public static string ReverseHexString(string data)
+        {
+            string[] values = null;
+            if (data.Length == 0)
+                return "";
+            values = data.Split(' ').Reverse().ToArray();
+            return string.Join(" ", values);
+
         }
 
         public static string[] ExtractGPSMessages(string data)
@@ -202,7 +296,7 @@ namespace C_Box
             string year = DateTime.Now.ToString("yy");
             string day = DateTime.Now.ToString("dd");
             string month = DateTime.Now.ToString("MM");
-            return BitConverter.ToString(new byte[] { Convert.ToByte(year, 16), Convert.ToByte(month, 16), Convert.ToByte(day, 16) }).Replace('-', ' ');
+            return BitConverter.ToString(new byte[] { Convert.ToByte(day, 16), Convert.ToByte(month, 16), Convert.ToByte(year, 16) }).Replace('-', ' ');
         }
 
         public static bool WriteKeysToFile(string folderPath, string fileName, string Startkeyverificationkonstante, string IKA_SCK, string ECU_Master_KEY, string Debug_CC, string Status_KS)
@@ -382,27 +476,100 @@ namespace C_Box
             return Process.GetProcesses().Where(x => x.ProcessName == name).FirstOrDefault().Id;
         }
 
-        public static bool LaunchProcess(string name, string arguments)
+        public static bool LaunchProcess(string name, string arguments, int timeout = 0)
         {
             if (string.IsNullOrEmpty(name))
                 return false;
             Process process = new Process();
             try
             {
-                //process.StartInfo.WorkingDirectory = @"C:\CGW_IMX\IMX\mfgtools\";
                 process.StartInfo.FileName = name;
                 process.StartInfo.Arguments = arguments;
                 process.StartInfo.UseShellExecute = true;
                 process.StartInfo.CreateNoWindow = true;
                 process.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
-                bool p = process.Start();
-                Console.WriteLine("Process ID: {0}", process.Id);
-                return SearchProcessByName(name);
+                process.Start();
+                bool pName = SearchProcessByName(name);
+                if (timeout > 0)
+                {
+                    bool result = process.WaitForExit(timeout) & pName;
+                    if (!result)
+                        KillProcessByPID(process.Id);
+                    return result;
+                }
+                return pName;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("Error: {0}", ex.Message);
                 throw ex;
+            }
+        }
+
+        public static int LaunchShell(string name, string arguments, out string stdOutput, out string stdError, int timeout, bool runAsAdmin = false, string user = "", string password = "")
+        {
+            Process process = new Process();
+            int code = 0;
+            System.Security.SecureString pass = null;
+            if (runAsAdmin)
+            {
+                if (user.Length == 0)
+                {
+                    code = 10;
+                    stdOutput = "";
+                    stdError = "Es necesario proporcionar un nombre de usuario";
+                    return code;
+                }
+                if (password.Length == 0)
+                {
+                    code = 10;
+                    stdOutput = "";
+                    stdError = "Es necesario proporcionar la contraseña de usuario";
+                    return code;
+                }
+                pass = new System.Security.SecureString();
+                foreach (char c in password)
+                    pass.AppendChar(c);
+            }
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("El nombre del proceso no puede ser nulo");
+            try
+            {
+                process.StartInfo.FileName = name;
+                process.StartInfo.Arguments = arguments;
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                process.StartInfo.RedirectStandardError = true;
+                process.StartInfo.RedirectStandardOutput = true;
+                if (runAsAdmin)
+                {
+                    process.StartInfo.Verb = "runas";
+                    process.StartInfo.UserName = user;
+                    process.StartInfo.Password = pass;
+                }
+                process.Start();
+                bool waitResult = process.WaitForExit(timeout);
+                if (!waitResult)
+                {
+                    KillProcessByPID(process.Id);
+                    code = 1;
+                    stdOutput = "";
+                    stdError = "A timeout has occurred while waiting the process to end";
+                    process.Dispose();
+                    return code;
+                }
+                code = process.ExitCode;
+                stdOutput = process.StandardOutput.ReadToEnd();
+                stdError = process.StandardError.ReadToEnd();
+                process.Dispose();
+                return code;
+            }
+            catch (Exception e)
+            {
+                if (process != null)
+                    process.Dispose();
+                throw e;
             }
         }
 
@@ -425,6 +592,14 @@ namespace C_Box
                 Debug.WriteLine("Error: {0}", ex.Message);
                 return false;
             }
+        }
+
+        public static string ReadFileAndConvertToHex(string filePath)
+        {
+            if (!File.Exists(filePath))
+                return "";
+            byte[] content = File.ReadAllBytes(filePath);
+            return BitConverter.ToString(content).Replace('-', ' ');
         }
 
         public static void KillProcessByPID(int pid)
@@ -491,9 +666,27 @@ namespace C_Box
             {
                 if (path.Length == 0)
                     return "";
-                if (!File.Exists(path))
+                if (Path.GetFileName(path).Length < 0)
                     return "";
                 return Path.GetFileName(path);
+            }
+            catch (ArgumentException e)
+            {
+                throw e;
+            }
+        }
+
+        public static string ExtractParentDirectory(string path)
+        {
+            try
+            {
+                if (path.Length == 0)
+                    return "";
+                //if (!File.Exists(path))
+                //    return "";
+                if (Path.GetFileName(path).Length < 0)
+                    return "";
+                return Path.GetDirectoryName(path);
             }
             catch (ArgumentException e)
             {
@@ -508,7 +701,7 @@ namespace C_Box
             if (!File.Exists(logPath))
                 return "";
             lines = File.ReadAllText(logPath);
-            Match match = Regex.Match(lines, @"IMEI\r\n([0-9]+\r\n\r\nOK)", RegexOptions.IgnoreCase);
+            Match match = Regex.Match(lines, @"IMEI\r\n([0-9]+)\r\n\r\nOK", RegexOptions.IgnoreCase);
             if (match.Success)
                 imei = match.Value.Replace("IMEI\r\n", "").Replace("\r\n\r\nOK", "").Trim();
             return imei;
@@ -521,7 +714,7 @@ namespace C_Box
             if (!File.Exists(logPath))
                 return "";
             lines = File.ReadAllText(logPath);
-            Match match = Regex.Match(lines, @"IMSI\r\n([0-9]+\r\n\r\nOK)", RegexOptions.IgnoreCase);
+            Match match = Regex.Match(lines, @"IMSI\r\n([0-9]+)\r\n\r\nOK", RegexOptions.IgnoreCase);
             if (match.Success)
                 imsi = match.Value.Replace("IMSI\r\n", "").Replace("\r\n\r\nOK", "").Trim();
             return imsi;
@@ -534,7 +727,7 @@ namespace C_Box
             if (!File.Exists(logPath))
                 return "";
             lines = File.ReadAllText(logPath);
-            Match match = Regex.Match(lines, @"ICCID\r\n\^ICCID:\s([0-9]+\r\n\r\nOK)", RegexOptions.IgnoreCase);
+            Match match = Regex.Match(lines, @"ICCID\r\n\^ICCID:\s([0-9]+)\r\n\r\nOK", RegexOptions.IgnoreCase);
             if (match.Success)
                 iccid = match.Value.Replace("ICCID\r\n", "").Replace("^ICCID: ", "").Replace("\r\n\r\nOK", "").Trim();
             return iccid;
@@ -551,6 +744,33 @@ namespace C_Box
             if (match.Success)
                 euiccid = match.Value.Replace("+CSIM: 22,\"", "").Replace("\"\r\n\r\nOK", "").Trim();
             return euiccid;
+        }
+
+        public static bool FindStringInFile(string filePath, string dataToFind)
+        {
+            try
+            {
+                if (!File.Exists(filePath))
+                    return false;
+                if (dataToFind.Length == 0)
+                    return false;
+                return File.ReadAllLines(filePath).Where(x => x.Equals(dataToFind)).FirstOrDefault()?.Length > 0;
+            }
+            catch (IOException e)
+            {
+                throw e;
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                throw e;
+            }
+        }
+
+        public static string RemoveFileExtension(string path)
+        {
+            if (path.Length == 0)
+                return "";
+            return Path.GetFileNameWithoutExtension(path);
         }
     }
 }
