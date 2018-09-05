@@ -422,7 +422,7 @@ namespace C_Box
         {
             if (data.Length == 0)
                 return null;
-            string port = data.Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(11).Trim();
+            string port = data.Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(10).Trim();
             port = port.Remove(0, port.IndexOf("(") + 1).Replace(")", "");
             return port;
         }

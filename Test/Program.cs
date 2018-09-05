@@ -44,12 +44,13 @@ namespace Test
                 //    sectors.Add(Utilities.GetNextSectorOfBlocks(blocks, 256, i));
                 //}
                 //Console.WriteLine(Utilities.FindStringInFile(@"C:\C-BOX\Variants\ConBox_Low_NAR\Firmware\NAD\NAD_APP_v034\version_info.txt", "Buildname = CLU1_CBOXL_ALL_ALL_034PROD"));
-                string stdOut;
-                string stdError;
-                Utilities.GetSectionFromConfigurationFile(@"C:\C-BOX\System Files\Control Signals.ini", "NEST_01");
-                Utilities.LaunchShell(@"C:\C-BOX\Utilities\Scripting\HUAWEI_COM_Reset.bat", "", out stdOut, out stdError, 20000, true, "zamtest", "zamtest");
-                Console.WriteLine(stdOut);
-                Console.WriteLine(stdError);
+                //string stdOut;
+                //string stdError;
+                //Utilities.GetSectionFromConfigurationFile(@"C:\C-BOX\System Files\Control Signals.ini", "NEST_01");
+                //Utilities.LaunchShell(@"C:\C-BOX\Utilities\Scripting\HUAWEI_COM_Reset.bat", "", out stdOut, out stdError, 20000, true, "zamtest", "zamtest");
+                //Console.WriteLine(stdOut);
+                //Console.WriteLine(stdError);
+                Utilities.ExtractApplicationInterfacePort("Name                                             \r\r\nHUAWEI Mobile Connect - PC UI Interface(COM36)  \r\r\n\r\r\nName                                     \r\r\nHUAWEI Mobile Connect - SerialC(COM38)  \r\r\n\r\r\nName                                     \r\r\nHUAWEI Mobile Connect - SerialB(COM37)  \r\r\n\r\r\nName                                                   \r\r\nHUAWEI Mobile Connect - Application Interface(COM35)  \r\r\n\r\r\n");
                 Console.ReadLine();
             }
             catch (Exception e)
