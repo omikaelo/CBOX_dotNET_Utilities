@@ -50,7 +50,17 @@ namespace Test
                 //Utilities.LaunchShell(@"C:\C-BOX\Utilities\Scripting\HUAWEI_COM_Reset.bat", "", out stdOut, out stdError, 20000, true, "zamtest", "zamtest");
                 //Console.WriteLine(stdOut);
                 //Console.WriteLine(stdError);
-                Utilities.ExtractApplicationInterfacePort("Name                                             \r\r\nHUAWEI Mobile Connect - PC UI Interface(COM36)  \r\r\n\r\r\nName                                     \r\r\nHUAWEI Mobile Connect - SerialC(COM38)  \r\r\n\r\r\nName                                     \r\r\nHUAWEI Mobile Connect - SerialB(COM37)  \r\r\n\r\r\nName                                                   \r\r\nHUAWEI Mobile Connect - Application Interface(COM35)  \r\r\n\r\r\n");
+                //Utilities.ExtractApplicationInterfacePort("Name                                             \r\r\nHUAWEI Mobile Connect - PC UI Interface(COM36)  \r\r\n\r\r\nName                                     \r\r\nHUAWEI Mobile Connect - SerialC(COM38)  \r\r\n\r\r\nName                                     \r\r\nHUAWEI Mobile Connect - SerialB(COM37)  \r\r\n\r\r\nName                                                   \r\r\nHUAWEI Mobile Connect - Application Interface(COM35)  \r\r\n\r\r\n");
+                int id;
+                string mac;
+                SQLTransaction.Server = "10.103.40.65";
+                SQLTransaction.DataBase = "itac";
+                SQLTransaction.UserID = "mac_usr";
+                SQLTransaction.Password = "eol_mac";
+                SQLTransaction.GetNextAvailableMAC(out id, out mac);
+                Console.WriteLine($"ID= {id}\r\nMAC= {mac}");
+                if (id > 0)
+                    Console.WriteLine($"MAC is used to false: {SQLTransaction.SetMACIsUsed(id, false)}");
                 Console.ReadLine();
             }
             catch (Exception e)
