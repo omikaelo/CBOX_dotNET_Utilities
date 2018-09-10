@@ -201,7 +201,7 @@ namespace C_Box
         {
             if (data.Length == 0)
                 return new string[] { };
-            return data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("$GL")).ToArray();
+            return data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("$GL") && x.Contains("*")).ToArray();
         }
 
         public static int ExtractIDFromGPSMessage(string message)
@@ -771,6 +771,23 @@ namespace C_Box
             if (path.Length == 0)
                 return "";
             return Path.GetFileNameWithoutExtension(path);
+        }
+
+        public static bool UpdateNADMACAddressScript(string mac, string scriptPath, string logPath)
+        {
+            string[] content = new string[] { };
+            if (!File.Exists(scriptPath))
+                return false;
+            content = File.ReadAllLines(scriptPath);
+            for (int i = 0; i < content.Length; i++)
+            {
+                if (content[i].StartsWith("logopen"))
+                    content[i] = $"logopen '{logPath}' 1 0";
+                else if(content[i].StartsWith("sendln 'AT^DEVINFO,"))
+                    content[i] = $"sendln 'AT^DEVINFO, {mac}'";
+            }
+            File.WriteAllLines(scriptPath, content);
+            return true;
         }
     }
 }
