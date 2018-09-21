@@ -60,7 +60,7 @@ namespace C_Box
             }
         }
 
-        public static bool SetMACIsUsed(int ID, bool isUsed)
+        public static bool SetMACIsUsed(int ID, bool isUsed, string station = "", string serialNumber = "")
         {
             int result = 0;
             connectionString = $"Server={Server}; Database={DataBase}; User Id={UserID}; Password={Password}";
@@ -70,7 +70,10 @@ namespace C_Box
                 {
                     sqlConnection.ConnectionString = connectionString;
                     sqlConnection.Open();
-                    sqlCommand = new SqlCommand($"UPDATE MAC_ADDRESSES SET IS_USED = {Convert.ToInt16(isUsed)}, STATION = NULL WHERE ID = {ID.ToString()}", sqlConnection);
+                    if (station != "" && serialNumber != "")
+                        sqlCommand = new SqlCommand($"UPDATE MAC_ADDRESSES SET IS_USED={Convert.ToInt16(isUsed)}, TIME_STAMP=GETDATE(), STATION=\'{station}\', SNR=\'{serialNumber}\' WHERE ID={ID};", sqlConnection);
+                    else
+                        sqlCommand = new SqlCommand($"UPDATE MAC_ADDRESSES SET IS_USED={Convert.ToInt16(isUsed)}, STATION=NULL WHERE ID={ID.ToString()};", sqlConnection);
                     sqlCommand.CommandType = CommandType.Text;
                     result = sqlCommand.ExecuteNonQuery();
                     sqlConnection.Close();

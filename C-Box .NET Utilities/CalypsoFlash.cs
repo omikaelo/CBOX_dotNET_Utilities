@@ -100,7 +100,7 @@ namespace C_Box
                         if (response.Data != "03 33")
                         {
                             elapsed.Stop();
-                            stdOutput = $"Error in Block_Begin acknowledge, received {response.Data} and expecting 03 00\r\nSector #: {sectorNum}\r\nElapsed time: {elapsed.ElapsedMilliseconds} ms";
+                            stdOutput = $"Error in Block_Begin acknowledge, received {response.Data} and expecting 03 33\r\nSector #: {sectorNum}\r\nElapsed time: {elapsed.ElapsedMilliseconds} ms";
                             return false;
                         }
                         for (blockNum = 0; blockNum < Sector.Length; blockNum++)
@@ -115,7 +115,7 @@ namespace C_Box
                         if (response.Data != "03 35")
                         {
                             elapsed.Stop();
-                            stdOutput = $"Error in Block_End acknowledge:\nSector #: {sectorNum}\n";
+                            stdOutput = $"Error in Block_End acknowledge, received {response.Data} and expecting 03 35\r\nSector #: {sectorNum}\r\nElapsed time: {elapsed.ElapsedMilliseconds} ms";
                             return false;
                         }
                         //Wait for Block_Transfer_Result
@@ -138,7 +138,6 @@ namespace C_Box
                         }
                     }
                     elapsed.Stop();
-                    //Debug.WriteLine($"Elapsed flashing time: {elapsed.ElapsedMilliseconds / 1000} seconds");
                 }
                 stdOutput = $"Flash process done. Elapsed time: {elapsed.ElapsedMilliseconds} ms";
                 return true;

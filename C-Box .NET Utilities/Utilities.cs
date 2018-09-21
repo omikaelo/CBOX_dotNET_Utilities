@@ -9,6 +9,7 @@ using IniParser.Model;
 using System.Text.RegularExpressions;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Collections.Generic;
 
 namespace C_Box
 {
@@ -413,9 +414,27 @@ namespace C_Box
             return port;
         }
 
-        public static void WriteToLog(string path, string data)
+        public static bool WriteToFile(string path, string data)
         {
-            File.WriteAllText(path, data);
+            try
+            {
+                if (data.Length < 0)
+                    return false;
+                File.WriteAllText(path, data);
+                return true;
+            }
+            catch (ArgumentException e)
+            {
+                throw e;
+            }
+            catch (DirectoryNotFoundException e)
+            {
+                throw e;
+            }
+            catch (IOException e)
+            {
+                throw e;
+            }
         }
 
         public static string ExtractApplicationInterfacePort(string data)
@@ -425,6 +444,21 @@ namespace C_Box
             string port = data.Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(10).Trim();
             port = port.Remove(0, port.IndexOf("(") + 1).Replace(")", "");
             return port;
+        }
+
+        public static string GetCurrentYear()
+        {
+            return DateTime.Now.Year.ToString();
+        }
+
+        public static string GetCurrentMonth()
+        {
+            return DateTime.Today.ToString("MMMM").ToUpper();
+        }
+
+        public static string GetCurrentDay()
+        {
+            return DateTime.Now.ToString("dddd_dd").ToUpper();
         }
 
         public static string ExtractFAZITString(string data)
@@ -746,6 +780,28 @@ namespace C_Box
             return euiccid;
         }
 
+        public static string ExtractSOCIDFromLog(string logPath)
+        {
+            int index = 0;
+            List<string> lines = new List<string>();
+            string socid = "";
+            try
+            {
+                if (!File.Exists(logPath))
+                    return "";
+                lines = File.ReadAllLines(logPath).ToList();
+                index = lines.FindIndex(x => x.Contains("Found SOCID:"));
+                if (index < 0)
+                    return "";
+                socid = lines[index].Replace("Found SOCID: ", "").Replace("\r\n", "").Trim();
+                return socid;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
         public static bool FindStringInFile(string filePath, string dataToFind)
         {
             try
@@ -754,13 +810,25 @@ namespace C_Box
                     return false;
                 if (dataToFind.Length == 0)
                     return false;
-                return File.ReadAllLines(filePath).Where(x => x.Equals(dataToFind)).FirstOrDefault()?.Length > 0;
+                return File.ReadAllLines(filePath).Where(x => x.Contains(dataToFind)).FirstOrDefault()?.Length > 0;
             }
             catch (IOException e)
             {
                 throw e;
             }
             catch (UnauthorizedAccessException e)
+            {
+                throw e;
+            }
+        }
+
+        public static string RemoveStringFromFilename(string fileName, string strToRemove)
+        {
+            try
+            {
+                return fileName.Replace(strToRemove, "");
+            }
+            catch (ArgumentException e)
             {
                 throw e;
             }
@@ -776,18 +844,143 @@ namespace C_Box
         public static bool UpdateNADMACAddressScript(string mac, string scriptPath, string logPath)
         {
             string[] content = new string[] { };
+            try
+            {
+                if (!File.Exists(scriptPath))
+                    return false;
+                content = File.ReadAllLines(scriptPath);
+                for (int i = 0; i < content.Length; i++)
+                {
+                    if (content[i].Contains("logopen"))
+                        content[i] = $"logopen '{logPath}' 1 0";
+                    else if (content[i].Contains("sendln 'AT^DEVINFO=0,"))
+                        content[i] = $"sendln 'AT^DEVINFO=0,{mac}'";
+                }
+                File.WriteAllLines(scriptPath, content);
+                return true;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        public static bool CheckIfFileExists(string path)
+        {
+            try
+            {
+                if (!File.Exists(path))
+                    return false;
+                return true;
+            }
+            catch (IOException e)
+            {
+                throw e;
+            }
+        }
+
+        public static bool CreateSocketLogFolder(string logPath)
+        {
+            try
+            {
+                if (!Directory.Exists(logPath))
+                    Directory.CreateDirectory(logPath);
+                return true;
+            }
+            catch (IOException e)
+            {
+                throw e;
+            }
+        }
+
+        public static bool UpdateLogPathATScript(string logPath, string scriptPath)
+        {
+            string[] content = new string[] { };
             if (!File.Exists(scriptPath))
                 return false;
             content = File.ReadAllLines(scriptPath);
             for (int i = 0; i < content.Length; i++)
             {
-                if (content[i].StartsWith("logopen"))
+                if (content[i].Contains("logopen"))
                     content[i] = $"logopen '{logPath}' 1 0";
-                else if(content[i].StartsWith("sendln 'AT^DEVINFO,"))
-                    content[i] = $"sendln 'AT^DEVINFO, {mac}'";
             }
             File.WriteAllLines(scriptPath, content);
             return true;
+        }
+
+        public static bool SearchWordInFile(string filePath, string word)
+        {
+            string content = "";
+            try
+            {
+                if (!File.Exists(filePath))
+                    return false;
+                content = File.ReadAllText(filePath);
+                if (content.Contains(word))
+                    return true;
+                return false;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        public static bool UpdateFAZITFile(string filePath, string iccid, string euiccid, string imsi, string oemPartNumber, string socid)
+        {
+            int index = 0;
+            List<string> content = null;
+            try
+            {
+                if (!File.Exists(filePath))
+                    return false;
+                content = File.ReadAllLines(filePath).ToList();
+                index = content.FindIndex(x => x.Contains("iccid"));
+                if (index >= 0)
+                    content[index] = $"\"iccid\":\"{iccid}\",";
+                else
+                    return false;
+                index = content.FindIndex(x => x.Contains("\"euiccid\""));
+                if (index >= 0)
+                    content[index] = $"\"euiccid\":\"{euiccid}\",";
+                else
+                    return false;
+                index = content.FindIndex(x => x.Contains("\"imsi\""));
+                if (index >= 0)
+                    content[index] = $"\"imsi\":\"{imsi}\",";
+                else
+                    return false;
+                index = content.FindIndex(x => x.Contains("\"oemPartNumber\""));
+                if (index >= 0)
+                    content[index] = $"\"oemPartNumber\":\"{oemPartNumber}\",";
+                else
+                    return false;
+                index = content.FindIndex(x => x.Contains("\"serial\""));
+                if (index >= 0)
+                    content[index] = $"\"serial\":false,";
+                else
+                    return false;
+                content.Insert(content.ToList().Count - 1, $"\"socid\":\"{socid}\"");
+                File.WriteAllLines(filePath, content);
+                return true;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        public static string FixSerialNumberLen(string serialNumber, int len, char padChar)
+        {
+            string aux = "";
+            if (serialNumber.Length > len)
+                return "";
+            if (len <= 0)
+                return "";
+            if (padChar == ' ')
+                return "";
+            aux = serialNumber.PadLeft(len, padChar);
+            return aux;
         }
     }
 }
