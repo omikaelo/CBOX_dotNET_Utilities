@@ -13,9 +13,9 @@ using System.Collections.Generic;
 
 namespace C_Box
 {
-    public static class Utilities
+    public class Utilities
     {
-        public static bool Ping(string ipAddress)
+        public bool Ping(string ipAddress)
         {
             if (ipAddress.Length == 0)
                 return false;
@@ -47,7 +47,7 @@ namespace C_Box
             }
         }
 
-        public static string[] GetSectionFromConfigurationFile(string file, string section)
+        public string[] GetSectionFromConfigurationFile(string file, string section)
         {
             if (!File.Exists(file))
                 return null;
@@ -70,7 +70,7 @@ namespace C_Box
             return sectionKeys;
         }
 
-        public static string GetKeyFromConfigurationFile(string file, string section, string key)
+        public string GetKeyFromConfigurationFile(string file, string section, string key)
         {
             if (!File.Exists(file))
                 return "";
@@ -85,7 +85,7 @@ namespace C_Box
             return data[section][key];
         }
 
-        public static string GetKLCalGradient(string data)
+        public string GetKLCalGradient(string data)
         {
             if (string.IsNullOrEmpty(data))
                 return "";
@@ -94,7 +94,7 @@ namespace C_Box
             return data.Substring(0, 11);
         }
 
-        public static string GetKLCalOffset(string data)
+        public string GetKLCalOffset(string data)
         {
             if (string.IsNullOrEmpty(data))
                 return "";
@@ -103,7 +103,7 @@ namespace C_Box
             return data.Substring(12);
         }
 
-        public static int ConvertHexStringWithSpaceToNumber(string data)
+        public int ConvertHexStringWithSpaceToNumber(string data)
         {
             string hexNum = "";
             if (string.IsNullOrEmpty(data))
@@ -114,7 +114,7 @@ namespace C_Box
             return Convert.ToInt32(hexNum, 16);
         }
 
-        public static string ConvertInt32ToHexStringWithSpace(uint value)
+        public string ConvertInt32ToHexStringWithSpace(uint value)
         {
             string hex = Convert.ToString(value, 16);
             string aux = "";
@@ -128,7 +128,7 @@ namespace C_Box
             return aux;
         }
 
-        public static string ConvertInt16ToHexStringWithSpace(ushort value)
+        public string ConvertInt16ToHexStringWithSpace(ushort value)
         {
 
             string hex = Convert.ToString(value, 16);
@@ -143,7 +143,7 @@ namespace C_Box
             return aux;
         }
 
-        public static string ConvertHexStringWithSpecifierToHexStringWithSpace(string hex)
+        public string ConvertHexStringWithSpecifierToHexStringWithSpace(string hex)
         {
             if (string.IsNullOrEmpty(hex) || string.IsNullOrWhiteSpace(hex))
                 return "";
@@ -158,12 +158,12 @@ namespace C_Box
             return "";
         }
 
-        public static string ConvertASCIIStringToHex(string data)
+        public string ConvertASCIIStringToHex(string data)
         {
             return BitConverter.ToString(Encoding.ASCII.GetBytes(data)).Replace('-', ' ');
         }
 
-        public static string ReverseHexString(string data)
+        public string ReverseHexString(string data)
         {
             string[] values = null;
             if (data.Length == 0)
@@ -173,14 +173,14 @@ namespace C_Box
 
         }
 
-        public static string[] ExtractGPSMessages(string data)
+        public string[] ExtractGPSMessages(string data)
         {
             if (data.Length == 0)
                 return new string[] { };
             return data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("$GP") && x.Contains("*")).ToArray();
         }
 
-        public static string[] SortGPSMessagesBySNRDesc(string[] messages)
+        public string[] SortGPSMessagesBySNRDesc(string[] messages)
         {
             string[] ordered = null;
             if (messages.Length == 0)
@@ -189,7 +189,7 @@ namespace C_Box
             return ordered;
         }
 
-        public static string[] SortGLONASSMessagesBySNRDesc(string[] messages)
+        public string[] SortGLONASSMessagesBySNRDesc(string[] messages)
         {
             string[] ordered = null;
             if (messages.Length == 0)
@@ -198,14 +198,14 @@ namespace C_Box
             return ordered;
         }
 
-        public static string[] ExtractGLONASSMessages(string data)
+        public string[] ExtractGLONASSMessages(string data)
         {
             if (data.Length == 0)
                 return new string[] { };
             return data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("$GL") && x.Contains("*")).ToArray();
         }
 
-        public static int ExtractIDFromGPSMessage(string message)
+        public int ExtractIDFromGPSMessage(string message)
         {
             string id = "";
             if (message.Length == 0)
@@ -216,7 +216,7 @@ namespace C_Box
             return Convert.ToInt32(id);
         }
 
-        public static int ExtractSNRFromGPSMessage(string message)
+        public int ExtractSNRFromGPSMessage(string message)
         {
             if (message.Length == 0)
                 return -1;
@@ -227,7 +227,7 @@ namespace C_Box
             return Convert.ToInt32(snr);
         }
 
-        public static int ExtractSNRFromGLONASSMessage(string message)
+        public int ExtractSNRFromGLONASSMessage(string message)
         {
             if (message.Length == 0)
                 return -1;
@@ -238,7 +238,7 @@ namespace C_Box
             return Convert.ToInt32(snr);
         }
 
-        public static string ConvertHexASCIIToChar(string data)
+        public string ConvertHexASCIIToChar(string data)
         {
             if (data.Length == 0)
                 return "";
@@ -252,7 +252,7 @@ namespace C_Box
             return result;
         }
 
-        public static string[] Get8ByteChunksFromFWPath(string data)
+        public string[] Get8ByteChunksFromFWPath(string data)
         {
             string[] chunks = new string[] { };
             int chunksCounter;
@@ -292,7 +292,7 @@ namespace C_Box
             return chunks;
         }
 
-        public static string ConvertDateToBDCFormat()
+        public string ConvertDateToBDCFormat()
         {
             string year = DateTime.Now.ToString("yy");
             string day = DateTime.Now.ToString("dd");
@@ -300,7 +300,7 @@ namespace C_Box
             return BitConverter.ToString(new byte[] { Convert.ToByte(day, 16), Convert.ToByte(month, 16), Convert.ToByte(year, 16) }).Replace('-', ' ');
         }
 
-        public static bool WriteKeysToFile(string folderPath, string fileName, string Startkeyverificationkonstante, string IKA_SCK, string ECU_Master_KEY, string Debug_CC, string Status_KS)
+        public bool WriteKeysToFile(string folderPath, string fileName, string Startkeyverificationkonstante, string IKA_SCK, string ECU_Master_KEY, string Debug_CC, string Status_KS)
         {
             if (string.IsNullOrEmpty(fileName))
                 return false;
@@ -327,7 +327,7 @@ namespace C_Box
             }
         }
 
-        public static bool ExtractLSBAndMSBFromPWD(string pwd, out string lsb, out string msb)
+        public bool ExtractLSBAndMSBFromPWD(string pwd, out string lsb, out string msb)
         {
             lsb = msb = "";
             if (string.IsNullOrEmpty(pwd))
@@ -341,7 +341,7 @@ namespace C_Box
             return true;
         }
 
-        public static bool WriteIPC_Key_ToFile(string folder, string data)
+        public bool WriteIPC_Key_ToFile(string folder, string data)
         {
             if (string.IsNullOrEmpty(data))
                 return false;
@@ -366,7 +366,7 @@ namespace C_Box
             }
         }
 
-        public static string ExtractSerialNumber(string data)
+        public string ExtractSerialNumber(string data)
         {
 
             string sn = "";
@@ -378,7 +378,7 @@ namespace C_Box
             return sn;
         }
 
-        public static string ExtractPCUIInterfacePort(string data)
+        public string ExtractPCUIInterfacePort(string data)
         {
             if (data.Length == 0)
                 return "";
@@ -387,7 +387,7 @@ namespace C_Box
             return port;
         }
 
-        public static string ExtractSerialCPort(string data)
+        public string ExtractSerialCPort(string data)
         {
             if (data.Length == 0)
                 return "";
@@ -396,7 +396,7 @@ namespace C_Box
             return port;
         }
 
-        public static string ExtractSerialBPort(string data)
+        public string ExtractSerialBPort(string data)
         {
             if (data.Length == 0)
                 return "";
@@ -405,7 +405,7 @@ namespace C_Box
             return port;
         }
 
-        public static string Extract3GApplicationPort(string data)
+        public string Extract3GApplicationPort(string data)
         {
             if (data.Length == 0)
                 return "";
@@ -414,7 +414,7 @@ namespace C_Box
             return port;
         }
 
-        public static bool WriteToFile(string path, string data)
+        public bool WriteToFile(string path, string data)
         {
             try
             {
@@ -437,7 +437,7 @@ namespace C_Box
             }
         }
 
-        public static string ExtractApplicationInterfacePort(string data)
+        public string ExtractApplicationInterfacePort(string data)
         {
             if (data.Length == 0)
                 return null;
@@ -446,22 +446,22 @@ namespace C_Box
             return port;
         }
 
-        public static string GetCurrentYear()
+        public string GetCurrentYear()
         {
             return DateTime.Now.Year.ToString();
         }
 
-        public static string GetCurrentMonth()
+        public string GetCurrentMonth()
         {
             return DateTime.Today.ToString("MMMM").ToUpper();
         }
 
-        public static string GetCurrentDay()
+        public string GetCurrentDay()
         {
             return DateTime.Now.ToString("dddd_dd").ToUpper();
         }
 
-        public static string ExtractFAZITString(string data)
+        public string ExtractFAZITString(string data)
         {
             string fazit = "";
             if (string.IsNullOrEmpty(data))
@@ -474,14 +474,14 @@ namespace C_Box
             return fazit;
         }
 
-        public static string GetEnvironmentVariable(string variable)
+        public string GetEnvironmentVariable(string variable)
         {
             if (string.IsNullOrEmpty(variable))
                 return "";
             return Environment.GetEnvironmentVariable(variable, EnvironmentVariableTarget.User);
         }
 
-        public static void SetEnvironmentVariable(string variable, string value)
+        public void SetEnvironmentVariable(string variable, string value)
         {
             if (string.IsNullOrEmpty(variable) || string.IsNullOrEmpty(value))
                 return;
@@ -489,28 +489,28 @@ namespace C_Box
             Environment.SetEnvironmentVariable(variable, value, EnvironmentVariableTarget.User);
         }
 
-        public static bool SearchProcessByName(string name)
+        public bool SearchProcessByName(string name)
         {
             if (string.IsNullOrEmpty(name))
                 return false;
             return Process.GetProcesses().Where(x => x.ProcessName == name).FirstOrDefault() != null;
         }
 
-        public static bool SearchProcessByPID(int pid)
+        public bool SearchProcessByPID(int pid)
         {
             if (pid < 0)
                 return false;
             return Process.GetProcesses().Where(x => x.Id == pid).FirstOrDefault() != null;
         }
 
-        public static int GetProcessPID(string name)
+        public int GetProcessPID(string name)
         {
             if (string.IsNullOrEmpty(name))
                 return -1;
             return Process.GetProcesses().Where(x => x.ProcessName == name).FirstOrDefault().Id;
         }
 
-        public static bool LaunchProcess(string name, string arguments, int timeout = 0)
+        public bool LaunchProcess(string name, string arguments, int timeout = 0)
         {
             if (string.IsNullOrEmpty(name))
                 return false;
@@ -540,7 +540,7 @@ namespace C_Box
             }
         }
 
-        public static int LaunchShell(string name, string arguments, out string stdOutput, out string stdError, int timeout, bool runAsAdmin = false, string user = "", string password = "")
+        public int LaunchShell(string name, string arguments, out string stdOutput, out string stdError, int timeout, bool runAsAdmin = false, string user = "", string password = "")
         {
             Process process = new Process();
             int code = 0;
@@ -607,7 +607,7 @@ namespace C_Box
             }
         }
 
-        public static bool KillProcessByName(string name)
+        public bool KillProcessByName(string name)
         {
             if (string.IsNullOrEmpty(name))
                 return false;
@@ -628,7 +628,7 @@ namespace C_Box
             }
         }
 
-        public static string ReadFileAndConvertToHex(string filePath)
+        public string ReadFileAndConvertToHex(string filePath)
         {
             if (!File.Exists(filePath))
                 return "";
@@ -636,7 +636,7 @@ namespace C_Box
             return BitConverter.ToString(content).Replace('-', ' ');
         }
 
-        public static void KillProcessByPID(int pid)
+        public void KillProcessByPID(int pid)
         {
             if (pid < 0)
                 return;
@@ -656,7 +656,7 @@ namespace C_Box
             }
         }
 
-        public static byte[] ConvertHexStringWithSpaceToBytes(string data)
+        public byte[] ConvertHexStringWithSpaceToBytes(string data)
         {
 
             byte[] buffer = new byte[] { };
@@ -681,7 +681,7 @@ namespace C_Box
             return buffer;
         }
 
-        public static string[] ExtractDiscoveredIMEIs(string data)
+        public string[] ExtractDiscoveredIMEIs(string data)
         {
             string[] discoveredIMEIs = null;
             if (!data.Contains("device"))
@@ -694,7 +694,7 @@ namespace C_Box
             return discoveredIMEIs;
         }
 
-        public static string ExtractFileNameFromPath(string path)
+        public string ExtractFileNameFromPath(string path)
         {
             try
             {
@@ -710,7 +710,7 @@ namespace C_Box
             }
         }
 
-        public static string ExtractParentDirectory(string path)
+        public string ExtractParentDirectory(string path)
         {
             try
             {
@@ -728,7 +728,7 @@ namespace C_Box
             }
         }
 
-        public static string ExtractIMEIFromLog(string logPath)
+        public string ExtractIMEIFromLog(string logPath)
         {
             string lines = "";
             string imei = "";
@@ -741,7 +741,7 @@ namespace C_Box
             return imei;
         }
 
-        public static string ExtractIMSIFromLog(string logPath)
+        public string ExtractIMSIFromLog(string logPath)
         {
             string lines = "";
             string imsi = "";
@@ -754,7 +754,7 @@ namespace C_Box
             return imsi;
         }
 
-        public static string ExtractICCIDFromLog(string logPath)
+        public string ExtractICCIDFromLog(string logPath)
         {
             string lines = "";
             string iccid = "";
@@ -767,7 +767,7 @@ namespace C_Box
             return iccid;
         }
 
-        public static string ExtractEUICCIDFromLog(string logPath)
+        public string ExtractEUICCIDFromLog(string logPath)
         {
             string lines = "";
             string euiccid = "";
@@ -780,7 +780,7 @@ namespace C_Box
             return euiccid;
         }
 
-        public static string ExtractSOCIDFromLog(string logPath)
+        public string ExtractSOCIDFromLog(string logPath)
         {
             int index = 0;
             List<string> lines = new List<string>();
@@ -802,7 +802,7 @@ namespace C_Box
             }
         }
 
-        public static bool FindStringInFile(string filePath, string dataToFind)
+        public bool FindStringInFile(string filePath, string dataToFind)
         {
             try
             {
@@ -822,7 +822,7 @@ namespace C_Box
             }
         }
 
-        public static string RemoveStringFromFilename(string fileName, string strToRemove)
+        public string RemoveStringFromFilename(string fileName, string strToRemove)
         {
             try
             {
@@ -834,14 +834,14 @@ namespace C_Box
             }
         }
 
-        public static string RemoveFileExtension(string path)
+        public string RemoveFileExtension(string path)
         {
             if (path.Length == 0)
                 return "";
             return Path.GetFileNameWithoutExtension(path);
         }
 
-        public static bool UpdateNADMACAddressScript(string mac, string scriptPath, string logPath)
+        public bool UpdateNADMACAddressScript(string mac, string scriptPath, string logPath)
         {
             string[] content = new string[] { };
             try
@@ -865,7 +865,7 @@ namespace C_Box
             }
         }
 
-        public static bool CheckIfFileExists(string path)
+        public bool CheckIfFileExists(string path)
         {
             try
             {
@@ -879,7 +879,7 @@ namespace C_Box
             }
         }
 
-        public static bool CreateSocketLogFolder(string logPath)
+        public bool CreateSocketLogFolder(string logPath)
         {
             try
             {
@@ -893,7 +893,7 @@ namespace C_Box
             }
         }
 
-        public static bool UpdateLogPathATScript(string logPath, string scriptPath)
+        public bool UpdateLogPathATScript(string logPath, string scriptPath)
         {
             string[] content = new string[] { };
             if (!File.Exists(scriptPath))
@@ -908,7 +908,7 @@ namespace C_Box
             return true;
         }
 
-        public static bool SearchWordInFile(string filePath, string word)
+        public bool SearchWordInFile(string filePath, string word)
         {
             string content = "";
             try
@@ -926,7 +926,7 @@ namespace C_Box
             }
         }
 
-        public static bool UpdateFAZITFile(string filePath, string iccid, string euiccid, string imsi, string oemPartNumber, string socid)
+        public bool UpdateFAZITFile(string filePath, string iccid, string euiccid, string imsi, string oemPartNumber, string socid)
         {
             int index = 0;
             List<string> content = null;
@@ -970,7 +970,7 @@ namespace C_Box
             }
         }
 
-        public static string FixSerialNumberLen(string serialNumber, int len, char padChar)
+        public string FixSerialNumberLen(string serialNumber, int len, char padChar)
         {
             string aux = "";
             if (serialNumber.Length > len)

@@ -11,10 +11,16 @@ using System.Threading;
 
 namespace C_Box
 {
-    public static class CalypsoFlash
+    public class CalypsoFlash
     {
-        static Frame response = new Frame();
-        static Stopwatch elapsed;
+        Frame response = new Frame();
+        Stopwatch elapsed;
+
+        public CalypsoFlash()
+        {
+            response = new Frame();
+            elapsed = null;
+        }
         /// <summary>
         /// Retrieves the next sector of data from a collection of 8-byte blocks
         /// </summary>
@@ -22,7 +28,7 @@ namespace C_Box
         /// <param name="sectorSize"></param>
         /// <param name="currentSector"></param>
         /// <returns></returns>
-        static string[] GetNextSectorOfBlocks(string[] blocks, int sectorSize, int currentSector)
+        string[] GetNextSectorOfBlocks(string[] blocks, int sectorSize, int currentSector)
         {
             if (blocks.Length == 0)
                 throw new ArgumentException("El arreglo de bloques no puede ser nulo");
@@ -31,7 +37,7 @@ namespace C_Box
             return blocks.Skip(sectorSize * currentSector).Take(sectorSize).ToArray();
         }
 
-        static string[] GetBlocksFromAppFile(string appPath, int blockSize)
+        string[] GetBlocksFromAppFile(string appPath, int blockSize)
         {
             List<byte[]> blocks = null;
             List<string> chunks = null;
@@ -74,7 +80,7 @@ namespace C_Box
             return chunks.ToArray();
         }
 
-        public static bool FlashImageToCalypso(ref AVT852 avtInstance, ref CANBus canInstance, string imagePath, int sectorSize, int blockSize, out string stdOutput)
+        public bool FlashImageToCalypso(ref AVT852 avtInstance, ref CANBus canInstance, string imagePath, int sectorSize, int blockSize, out string stdOutput)
         {
             int totalSectors = 0;
             ushort blockNum = 0;

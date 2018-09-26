@@ -4,25 +4,33 @@ using System.Data.SqlClient;
 
 namespace C_Box
 {
-    public static class SQLTransaction
+    public class SQLTransaction
     {
-        static SqlCommand sqlCommand;
-        static SqlConnection sqlConnection;
-        static string connectionString;
+        SqlCommand sqlCommand;
+        SqlConnection sqlConnection;
+        string connectionString;
 
-        public static string UserID
+        public string UserID
         { get; set; }
 
-        public static string Password
+        public string Password
         { get; set; }
 
-        public static string Server
+        public string Server
         { get; set; }
 
-        public static string DataBase
+        public string DataBase
         { get; set; }
 
-        public static void GetNextAvailableMAC(out int id, out string mac)
+        public SQLTransaction()
+        {
+            UserID = "";
+            Password = "";
+            Server = "";
+            DataBase = "";
+        }
+
+        public void GetNextAvailableMAC(out int id, out string mac)
         {
             SqlDataReader reader;
             id = 0;
@@ -60,7 +68,7 @@ namespace C_Box
             }
         }
 
-        public static bool SetMACIsUsed(int ID, bool isUsed, string station = "", string serialNumber = "")
+        public bool SetMACIsUsed(int ID, bool isUsed, string station = "", string serialNumber = "")
         {
             int result = 0;
             connectionString = $"Server={Server}; Database={DataBase}; User Id={UserID}; Password={Password}";
