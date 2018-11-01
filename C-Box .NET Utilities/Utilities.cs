@@ -10,11 +10,15 @@ using System.Text.RegularExpressions;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Collections.Generic;
+using Microsoft.Win32;
 
 namespace C_Box
 {
     public class Utilities
     {
+        public Utilities()
+        { }
+
         public bool Ping(string ipAddress)
         {
             if (ipAddress.Length == 0)
@@ -297,7 +301,25 @@ namespace C_Box
             string year = DateTime.Now.ToString("yy");
             string day = DateTime.Now.ToString("dd");
             string month = DateTime.Now.ToString("MM");
-            return BitConverter.ToString(new byte[] { Convert.ToByte(day, 16), Convert.ToByte(month, 16), Convert.ToByte(year, 16) }).Replace('-', ' ');
+            return BitConverter.ToString(new byte[] { Convert.ToByte(year, 16), Convert.ToByte(month, 16), Convert.ToByte(day, 16) }).Replace('-', ' ');
+        }
+
+        public bool WriteKeyToIniFile(string filePath, string section, string key, string value)
+        {
+            try
+            {
+                if (!File.Exists(filePath))
+                    return false;
+                var parser = new FileIniDataParser();
+                IniData data = parser.ReadFile(filePath);
+                data[section][key] = value;
+                parser.WriteFile(filePath, data);
+                return true;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
         }
 
         public bool WriteKeysToFile(string folderPath, string fileName, string Startkeyverificationkonstante, string IKA_SCK, string ECU_Master_KEY, string Debug_CC, string Status_KS)
@@ -542,7 +564,8 @@ namespace C_Box
 
         public int LaunchShell(string name, string arguments, out string stdOutput, out string stdError, int timeout, bool runAsAdmin = false, string user = "", string password = "")
         {
-            Process process = new Process();
+            Process p = null;
+            ProcessStartInfo psi = new ProcessStartInfo();
             int code = 0;
             System.Security.SecureString pass = null;
             if (runAsAdmin)
@@ -569,40 +592,40 @@ namespace C_Box
                 throw new ArgumentException("El nombre del proceso no puede ser nulo");
             try
             {
-                process.StartInfo.FileName = name;
-                process.StartInfo.Arguments = arguments;
-                process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                process.StartInfo.RedirectStandardError = true;
-                process.StartInfo.RedirectStandardOutput = true;
+                psi.FileName = name;
+                psi.Arguments = arguments;
+                psi.CreateNoWindow = true;
+                psi.UseShellExecute = false;
+                psi.WindowStyle = ProcessWindowStyle.Hidden;
+                psi.RedirectStandardError = true;
+                psi.RedirectStandardOutput = true;
                 if (runAsAdmin)
                 {
-                    process.StartInfo.Verb = "runas";
-                    process.StartInfo.UserName = user;
-                    process.StartInfo.Password = pass;
+                    psi.Verb = "runas";
+                    psi.UserName = user;
+                    psi.Password = pass;
                 }
-                process.Start();
-                bool waitResult = process.WaitForExit(timeout);
+                p = Process.Start(psi);
+                bool waitResult = p.WaitForExit(timeout);
                 if (!waitResult)
                 {
-                    KillProcessByPID(process.Id);
+                    KillProcessByPID(p.Id);
                     code = 1;
                     stdOutput = "";
                     stdError = "A timeout has occurred while waiting the process to end";
-                    process.Dispose();
+                    p.Dispose();
                     return code;
                 }
-                code = process.ExitCode;
-                stdOutput = process.StandardOutput.ReadToEnd();
-                stdError = process.StandardError.ReadToEnd();
-                process.Dispose();
+                code = p.ExitCode;
+                stdOutput = p.StandardOutput.ReadToEnd();
+                stdError = p.StandardError.ReadToEnd();
+                p.Dispose();
                 return code;
             }
             catch (Exception e)
             {
-                if (process != null)
-                    process.Dispose();
+                if (p != null)
+                    p.Dispose();
                 throw e;
             }
         }
@@ -681,16 +704,22 @@ namespace C_Box
             return buffer;
         }
 
-        public string[] ExtractDiscoveredIMEIs(string data)
+        public string[] ExtractDiscoveredIMEIs(string data, int nestIndex)
         {
             string[] discoveredIMEIs = null;
-            if (!data.Contains("device"))
+            if (!data.Contains(" "))
                 return null;
             discoveredIMEIs = data.Replace("List of devices attached\r\n", "").Trim().Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            //if (discoveredIMEIs.Length == 1 && nestIndex == 1)
+            //{
+            //    Array.Resize(ref discoveredIMEIs, 2);
+            //    discoveredIMEIs[1] = discoveredIMEIs[0];
+            //    discoveredIMEIs[0] = "";
+            //}
             for (int i = 0; i < discoveredIMEIs.Length; i++)
-                discoveredIMEIs[i] = discoveredIMEIs[i].Remove(discoveredIMEIs[i].IndexOf("device")).Trim();
-            if (discoveredIMEIs.Length > 1)
-                Array.Reverse(discoveredIMEIs);
+                discoveredIMEIs[i] = discoveredIMEIs[i].Remove(discoveredIMEIs[i].IndexOf(" ")).Trim();
+            //if (discoveredIMEIs.Length > 1)
+            //    Array.Reverse(discoveredIMEIs);
             return discoveredIMEIs;
         }
 
@@ -774,9 +803,14 @@ namespace C_Box
             if (!File.Exists(logPath))
                 return "";
             lines = File.ReadAllText(logPath);
-            Match match = Regex.Match(lines, @"\+CSIM\:\s22\,\""([0-9A-F]+)\""\r\n\r\nOK", RegexOptions.IgnoreCase);
-            if (match.Success)
-                euiccid = match.Value.Replace("+CSIM: 22,\"", "").Replace("\"\r\n\r\nOK", "").Trim();
+            Match firstMatch = Regex.Match(lines, @"\+CSIM\:\s22\,\""([0-9A-F]+)\""\r\n\r\nOK", RegexOptions.IgnoreCase);
+            Match secondMatch = Regex.Match(lines, @"\+CSIM\:\s34\,\""([0-9A-F]+)\""\r\n\r\nOK", RegexOptions.IgnoreCase);
+            if (firstMatch.Success)
+                euiccid = firstMatch.Value.Replace("+CSIM: 22,\"", "").Replace("\"\r\n\r\nOK", "").Trim();
+            else if (secondMatch.Success)
+                euiccid = secondMatch.Value.Replace("+CSIM: 34,\"", "").Replace("\"\r\n\r\nOK", "").Trim();
+            else
+                euiccid = "";
             return euiccid;
         }
 
@@ -981,6 +1015,63 @@ namespace C_Box
                 return "";
             aux = serialNumber.PadLeft(len, padChar);
             return aux;
+        }
+
+        public string FixFazitString(string fazit)
+        {
+            if (fazit.Length == 0)
+                return "";
+            return fazit.Replace("\n", "");
+        }
+
+        public bool CheckUSBDeviceMapping(string[] imeiArray, string locationInformation, out string matchedIMEI)
+        {
+            string data;
+            try
+            {
+                using (RegistryKey hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                {
+                    if (hklm != null)
+                    {
+                        for (int i = 0; i < imeiArray.Length; i++)
+                        {
+                            using (RegistryKey h = hklm.OpenSubKey($@"SYSTEM\CurrentControlSet\Enum\USB\VID_12D1&PID_15C3\{imeiArray[i]}"))
+                            {
+                                if (h != null)
+                                {
+                                    data = (string)h.GetValue("LocationInformation");
+                                    if (data.Equals(locationInformation))
+                                    {
+                                        matchedIMEI = imeiArray[i];
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    matchedIMEI = "";
+                    return false;
+                }
+            }
+            catch (ArgumentException e)
+            {
+                throw e;
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                throw e;
+            }
+            catch (System.Security.SecurityException e)
+            {
+                throw e;
+            }
+        }
+
+        public string ReadContentFromFAZITFile(string path)
+        {
+            if (!File.Exists(path))
+                return "";
+            return File.ReadAllText(path).Replace("\r\n", "");
         }
     }
 }

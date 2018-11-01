@@ -21,10 +21,10 @@ namespace C_Box
             StatusCode = "";
         }
 
-        public string LogIn(string username, string password, string uri)
+        public bool LogIn(string username, string password, string uri, out string token)
         {
             HttpResponseMessage response;
-            string token;
+            token = "";
             try
             {
                 ServicePointManager.ServerCertificateValidationCallback += (RemoteCertificateValidationCallback)((sender, cert, chain, sslPolicyErrors) => true);
@@ -35,12 +35,12 @@ namespace C_Box
                     if (!response.IsSuccessStatusCode)
                     {
                         StatusCode = response.StatusCode.ToString();
-                        return "";
+                        return false;
                     }
                     var data = response.Content.ReadAsStringAsync();
                     dynamic jsonData = JObject.Parse(data.Result);
                     token = jsonData["access_token"];
-                    return token;
+                    return true;
                 }
             }
             catch (Exception e)

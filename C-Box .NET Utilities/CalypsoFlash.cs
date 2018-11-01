@@ -102,7 +102,7 @@ namespace C_Box
                         //Send Block_Begin
                         canInstance.Send("03 33", "00 00 08 00");
                         //Wait for acknowledge
-                        response = EventManager.CAN.GetByID(0x100, AVT.Enums.Channel.CAN_0, 10000);
+                        response = avtInstance.Events.CAN.GetByID(0x100, AVT.Enums.Channel.CAN_0, 10000);
                         if (response.Data != "03 33")
                         {
                             elapsed.Stop();
@@ -117,7 +117,7 @@ namespace C_Box
                         //Send Block_End
                         canInstance.Send("03 35", "");
                         //Wait for acknowledge
-                        response = EventManager.CAN.GetByID(0x100, AVT.Enums.Channel.CAN_0, 10000);
+                        response = avtInstance.Events.CAN.GetByID(0x100, AVT.Enums.Channel.CAN_0, 10000);
                         if (response.Data != "03 35")
                         {
                             elapsed.Stop();
@@ -125,7 +125,7 @@ namespace C_Box
                             return false;
                         }
                         //Wait for Block_Transfer_Result
-                        response = EventManager.CAN.GetByID(0x331, AVT.Enums.Channel.CAN_0, 10000);
+                        response = avtInstance.Events.CAN.GetByID(0x331, AVT.Enums.Channel.CAN_0, 10000);
                         if (response.Data != "00 00 00 00")
                         {
                             elapsed.Stop();
@@ -135,7 +135,7 @@ namespace C_Box
                         //Send Flash_Sent_Data
                         canInstance.Send("03 37", "");
                         //Wait for Flash_Done
-                        response = EventManager.CAN.GetByID(0x24f, AVT.Enums.Channel.CAN_0, 20000);
+                        response = avtInstance.Events.CAN.GetByID(0x24f, AVT.Enums.Channel.CAN_0, 20000);
                         if (response.Data != "00 00")
                         {
                             elapsed.Stop();

@@ -51,16 +51,46 @@ namespace Test
                 //Console.WriteLine(stdOut);
                 //Console.WriteLine(stdError);
                 //Utilities.ExtractApplicationInterfacePort("Name                                             \r\r\nHUAWEI Mobile Connect - PC UI Interface(COM36)  \r\r\n\r\r\nName                                     \r\r\nHUAWEI Mobile Connect - SerialC(COM38)  \r\r\n\r\r\nName                                     \r\r\nHUAWEI Mobile Connect - SerialB(COM37)  \r\r\n\r\r\nName                                                   \r\r\nHUAWEI Mobile Connect - Application Interface(COM35)  \r\r\n\r\r\n");
-                int id;
-                string mac;
-                SQLTransaction.Server = "10.103.40.65";
-                SQLTransaction.DataBase = "itac";
-                SQLTransaction.UserID = "mac_usr";
-                SQLTransaction.Password = "eol_mac";
-                SQLTransaction.GetNextAvailableMAC(out id, out mac);
-                Console.WriteLine($"ID= {id}\r\nMAC= {mac}");
-                if (id > 0)
-                    Console.WriteLine($"MAC is used to false: {SQLTransaction.SetMACIsUsed(id, false)}");
+                //int id;
+                //string mac;
+                //SQLTransaction.Server = "10.103.40.65";
+                //SQLTransaction.DataBase = "itac";
+                //SQLTransaction.UserID = "mac_usr";
+                //SQLTransaction.Password = "eol_mac";
+                //SQLTransaction.GetNextAvailableMAC(out id, out mac);
+                //Console.WriteLine($"ID= {id}\r\nMAC= {mac}");
+                //if (id > 0)
+                //    Console.WriteLine($"MAC is used to false: {SQLTransaction.SetMACIsUsed(id, false)}");
+                Utilities util = new Utilities();
+                Console.WriteLine($"Update FAZIT data into file: { util.UpdateFAZITFile(@"C:\C-BOX\Logs\2CCA12F04182728754B_Nest1\FAZIT.txt", "89011702278187909852", "0839017180819790589000", "310170818790985", "4K1035283A", "492DA3753F3B4D44A6AAC94FB2FA0E98DED6AB3FB8739C400925653E1AA7274C,64,65c41c41629fa92a3978c335520997a42c383fe74f72513d675c103bded2fcb3") }");
+                return;
+                FazitTransaction fazit = new FazitTransaction();
+                string token;
+                string jsonData;
+                bool result;
+                result = fazit.LogIn("eol72", "eol72", "https://localhost:8443/api/login", out token);
+                if (!result)
+                {
+                    Console.WriteLine("Error login fazit");
+                    Console.ReadLine();
+                    return;
+                }
+                Console.WriteLine($"Fazit login: {result}");
+                jsonData = File.ReadAllText(@"C:\C-BOX\Logs\2CCA12F04182728302B_Nest2\FAZIT.txt");
+                jsonData = jsonData.Replace("\r\n", "");
+                result = fazit.SendDataToFazit(token, jsonData, "https://localhost:8443/api/devices/cbox");
+                if (!result)
+                {
+                    Console.WriteLine("Error login fazit");
+                    Console.ReadLine();
+                    return;
+                }
+                Console.WriteLine($"Send data to fazit: {result}");
+                //Utilities u = new Utilities();
+                //string stdOut;
+                //string stdErr;
+                //int r = u.LaunchShell(@"C:\C-BOX\Utilities\Scripting\HUAWEI_COM_Reset.bat", "", out stdOut, out stdErr, 5000, true, "Lear", "Lear");
+                //Console.WriteLine(stdOut);
                 Console.ReadLine();
             }
             catch (Exception e)
