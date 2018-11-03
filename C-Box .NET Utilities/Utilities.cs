@@ -436,6 +436,24 @@ namespace C_Box
             return port;
         }
 
+        public string ExtractApplicationPort(string data)
+        {
+            if (data.Length == 0)
+                return "";
+            string port = data.Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(11).Trim();
+            port = port.Remove(0, port.IndexOf("(") + 1).Replace(")", "");
+            return port;
+        }
+
+        public string ExtractGPSInterfacePort(string data)
+        {
+            if (data.Length == 0)
+                return "";
+            string port = data.Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(14).Trim();
+            port = port.Remove(0, port.IndexOf("(") + 1).Replace(")", "");
+            return port;
+        }
+
         public bool WriteToFile(string path, string data)
         {
             try
@@ -457,15 +475,6 @@ namespace C_Box
             {
                 throw e;
             }
-        }
-
-        public string ExtractApplicationInterfacePort(string data)
-        {
-            if (data.Length == 0)
-                return null;
-            string port = data.Split(new string[] { "\r\r" }, StringSplitOptions.RemoveEmptyEntries).ElementAt(10).Trim();
-            port = port.Remove(0, port.IndexOf("(") + 1).Replace(")", "");
-            return port;
         }
 
         public string GetCurrentYear()
@@ -562,6 +571,7 @@ namespace C_Box
             }
         }
 
+
         public int LaunchShell(string name, string arguments, out string stdOutput, out string stdError, int timeout, bool runAsAdmin = false, string user = "", string password = "")
         {
             Process p = null;
@@ -629,6 +639,26 @@ namespace C_Box
                 throw e;
             }
         }
+
+        //public int ClearCOMPorts(string name, string arguments, int timeout, string user = "", string password = "")
+        //{
+        //    System.Security.SecureString pass = null;
+        //    pass = new System.Security.SecureString();
+        //    foreach (char c in password)
+        //        pass.AppendChar(c);
+        //    Process proc = new Process();
+        //    proc.StartInfo.FileName = name;
+        //    //proc.StartInfo.Arguments = "/C " + name;
+        //    proc.StartInfo.UseShellExecute = false;
+        //    proc.StartInfo.CreateNoWindow = true;
+        //    proc.StartInfo.RedirectStandardOutput = false;
+        //    proc.StartInfo.Verb = "runas";
+        //    proc.StartInfo.UserName = user;
+        //    proc.StartInfo.Password = pass;
+        //    proc.Start();
+        //    proc.WaitForExit(timeout);
+        //    return proc.ExitCode;
+        //}
 
         public bool KillProcessByName(string name)
         {
@@ -1022,6 +1052,63 @@ namespace C_Box
             if (fazit.Length == 0)
                 return "";
             return fazit.Replace("\n", "");
+        }
+
+        public bool RemoveHUWAEIDevice(string devconPath, string imei, string parentIdPrefix)
+        {
+            string stdout;
+            string stderr;
+            //Search for children
+            if (LaunchShell(devconPath, "findall \"*\\Vid_12D1&Sub*\"", out stdout, out stderr, 10000, false, null, null) != 0)
+                return false;
+            if (stdout.Contains("Error"))
+                return false;
+            string[] devices = stdout.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (string dev in devices)
+            {
+                if (dev.Contains(parentIdPrefix.ToUpperInvariant()))
+                {
+                    if (LaunchShell(devconPath, "remove \"@" + dev.Split(':')[0].Trim() + "\"", out stdout, out stderr, 10000, false, null, null) != 0)
+                        return false;
+                }
+            }
+            //Now search for composote devices
+            if (LaunchShell(devconPath, "findall \"*\\Vid_12D1&PID_15C3\"", out stdout, out stderr, 10000, false, null, null) != 0)
+                return false;
+            if (stdout.Contains("Error"))
+                return false;
+            devices = stdout.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (string dev in devices)
+            {
+                if (dev.Contains(imei))
+                {
+                    if (LaunchShell(devconPath, "remove \"@" + dev.Split(':')[0].Trim() + "\"", out stdout, out stderr, 10000, false, null, null) != 0)
+                        return false;
+                }
+            }
+            return true;
+        }
+
+        public string GetParentIdPrefix(string imei)
+        {
+            try
+            {
+                using (RegistryKey hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                {
+                    if (hklm != null)
+                    {
+                        using (RegistryKey dev = hklm.OpenSubKey($@"SYSTEM\CurrentControlSet\Enum\USB\VID_12D1&PID_15C3\{imei}"))
+                        {
+                            return (string)dev.GetValue("ParentIdPrefix");
+                        }
+                    }
+                    return "";
+                }
+            }
+            catch (ArgumentException e)
+            {
+                throw e;
+            }
         }
 
         public bool CheckUSBDeviceMapping(string[] imeiArray, string locationInformation, out string matchedIMEI)
