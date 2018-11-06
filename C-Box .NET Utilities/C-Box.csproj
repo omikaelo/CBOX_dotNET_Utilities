@@ -45,7 +45,7 @@
   <PropertyGroup />
   <PropertyGroup />
   <ItemGroup>
-    <Reference Include="AVT, Version=1.0.0.3, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="AVT, Version=1.0.0.4, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\C-BOX\Utilities\dotNET\AVT_852\AVT.dll</HintPath>
     </Reference>
