@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using AVT;
 using AVT.CAN;
 using System.IO;
 using System.Diagnostics;
-using System.Threading;
 
 namespace C_Box
 {
@@ -30,75 +27,88 @@ namespace C_Box
         /// <returns></returns>
         string[] GetNextSectorOfBlocks(string[] blocks, int sectorSize, int currentSector)
         {
+            if (blocks == null)
+                throw new ArgumentNullException("El arreglo de bloques no puede ser nulo");
             if (blocks.Length == 0)
-                throw new ArgumentException("El arreglo de bloques no puede ser nulo");
+                throw new ArgumentException("El arreglo de bloques no puede estar vacío");
             if (blocks.Length < sectorSize)
-                return null;
+                throw new ArgumentOutOfRangeException("El tamaño del bloque no puede ser menor al tamaño del sector");
             return blocks.Skip(sectorSize * currentSector).Take(sectorSize).ToArray();
         }
 
-        string[] GetBlocksFromAppFile(string appPath, int blockSize)
+        List<byte[]> GetBlocksFromAppFile(string appPath, int sectorSize)//sectorSize = 2048
         {
             List<byte[]> blocks = null;
-            List<string> chunks = null;
+            List<byte[]> sector = null;
             byte[] buffer = null;
             int totalBlocks;
+            int blockSize;
             int residue;
             if (appPath.Length == 0)
                 throw new ArgumentException("La ruta del archivo no puede ser nula");
             if (!File.Exists(appPath))
                 throw new FileNotFoundException("El archivo no existe en el sistema");
-            buffer = File.ReadAllBytes(appPath);
-            if (buffer.Length == 0)
-                return null;
-            if (buffer.Length % blockSize > 0)
+            try
             {
-                residue = buffer.Length % blockSize;
-                totalBlocks = (buffer.Length / blockSize) + 1;
-                blocks = new List<byte[]>(totalBlocks);
-                for (int i = 0; i < totalBlocks; i++)
+                buffer = File.ReadAllBytes(appPath);
+                if (buffer.Length == 0)
+                    return null;
+                blockSize = sectorSize / 8;
+                if (buffer.Length % sectorSize > 0)
                 {
-                    if (i == totalBlocks - 1)
-                        blocks.Add(buffer.Skip(blockSize * i).Take(residue).ToArray());
-                    else
-                        blocks.Add(buffer.Skip(blockSize * i).Take(blockSize).ToArray());
+                    residue = buffer.Length % sectorSize;
+                    totalBlocks = (buffer.Length / sectorSize) + 1;
+                    blocks = new List<byte[]>(totalBlocks);
+                    for (int i = 0; i < totalBlocks; i++)
+                    {
+                        if (i == totalBlocks - 1)
+                            blocks.Add(buffer.Skip(sectorSize * i).Take(residue).ToArray());
+                        else
+                            blocks.Add(buffer.Skip(sectorSize * i).Take(sectorSize).ToArray());
+                    }
                 }
+                else
+                {
+                    totalBlocks = buffer.Length / sectorSize; //896
+                    sector = new List<byte[]>(totalBlocks);
+                    byte[] aux = new byte[14 * 256];
+                    for (int i = 0; i < totalBlocks; i++)
+                    {
+                        for (int j = 0; j < 256; j++)
+                        {
+                            byte[] frame = new byte[8 + 6];
+                            frame[0] = 0x12;
+                            frame[1] = (byte)(((0x0b) & 0xff00) >> 8);
+                            frame[2] = (byte)((0x0b) & 0xff);
+                            frame[3] = 0x20;
+                            frame[4] = (byte)(((0x600 + j) & 0xff00) >> 8);
+                            frame[5] = (byte)(0x600 + j & 0xff);
+                            Buffer.BlockCopy(buffer, 8 * j, frame, 6, 8);
+                            Buffer.BlockCopy(frame, 0, aux, (j * frame.Length), frame.Length);
+                        }
+                        sector.Add(aux);
+                    }
+                }
+                return sector;
             }
-            else
+            catch (Exception e)
             {
-                totalBlocks = buffer.Length / blockSize;
-                blocks = new List<byte[]>(totalBlocks);
-                for (int i = 0; i < totalBlocks; i++)
-                    blocks.Add(buffer.Skip(blockSize * i).Take(blockSize).ToArray());
+                throw e;
             }
-            chunks = new List<string>(totalBlocks * 256);
-            for (int i = 0; i < totalBlocks; i++)
-            {
-                for (int j = 0; j < 256; j++)
-                    chunks.Add(BitConverter.ToString(blocks[i].Skip(8 * j).Take(8).ToArray()).Replace('-', ' '));
-            }
-            return chunks.ToArray();
         }
 
         public bool FlashImageToCalypso(ref AVT852 avtInstance, ref CANBus canInstance, string imagePath, int sectorSize, int blockSize, out string stdOutput)
         {
-            int totalSectors = 0;
-            ushort blockNum = 0;
-            int sectorNum = 0;
-            ushort baseID = 0x600;
-            string[] DataBlocks = null;
-            string[] Sector = null;
+            List<byte[]> Sectors = null;
             try
             {
-                DataBlocks = GetBlocksFromAppFile(imagePath, sectorSize);//896
-                totalSectors = DataBlocks.Length / blockSize;
-                if (DataBlocks.Length > 0)
+                Sectors = GetBlocksFromAppFile(imagePath, sectorSize);//896
+                if (Sectors.Count > 0)
                 {
                     elapsed = new Stopwatch();
                     elapsed.Start();
-                    for (sectorNum = 0; sectorNum < totalSectors; sectorNum++)
+                    for (int sectorNum = 0; sectorNum < Sectors.Count; sectorNum++)
                     {
-                        Sector = GetNextSectorOfBlocks(DataBlocks, blockSize, sectorNum);
                         //Send Block_Begin
                         canInstance.Send("03 33", "00 00 08 00");
                         //Wait for acknowledge
@@ -109,11 +119,8 @@ namespace C_Box
                             stdOutput = $"Error in Block_Begin acknowledge, received {response.Data} and expecting 03 33\r\nSector #: {sectorNum}\r\nElapsed time: {elapsed.ElapsedMilliseconds} ms";
                             return false;
                         }
-                        for (blockNum = 0; blockNum < Sector.Length; blockNum++)
-                        {
-                            //Send block of 8 bytes
-                            canInstance.Send((ushort)(baseID + blockNum), Sector[blockNum]);
-                        }
+                        //Send sector of 2048 bytes
+                        canInstance.SendPacket(Sectors[sectorNum]);
                         //Send Block_End
                         canInstance.Send("03 35", "");
                         //Wait for acknowledge
