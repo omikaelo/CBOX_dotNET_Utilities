@@ -62,7 +62,7 @@ namespace Test
                 //if (id > 0)
                 //    Console.WriteLine($"MAC is used to false: {SQLTransaction.SetMACIsUsed(id, false)}");
                 Utilities util = new Utilities();
-                util.RemoveHUAWEIDevice("358448080815789");
+                util.UpdateFAZITFile(@"C:\C-BOX\Logs\2CCA12F04183049864B_Nest2\FAZIT.txt    ", "89011702278228535153", "45070005095280329F9000", "310170822853515", "4K1035283A", "C460B303F445D71D970AA8A20AA6AEC13911B8FBFAED4F4C1379F2D1409C5540,64,40639ecb7127aaca343ea432d99d3abd33991f8fea5361f3f134abe8e010bc92");
                 //Console.WriteLine($"Update FAZIT data into file: { util.UpdateFAZITFile(@"C:\C-BOX\Logs\2CCA12F04182728754B_Nest1\FAZIT.txt", "89011702278187909852", "0839017180819790589000", "310170818790985", "4K1035283A", "492DA3753F3B4D44A6AAC94FB2FA0E98DED6AB3FB8739C400925653E1AA7274C,64,65c41c41629fa92a3978c335520997a42c383fe74f72513d675c103bded2fcb3") }");
                 //return;
                 //FazitTransaction fazit = new FazitTransaction();

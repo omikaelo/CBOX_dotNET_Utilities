@@ -1019,6 +1019,11 @@ namespace C_Box
                     content[index] = $"\"oemPartNumber\":\"{oemPartNumber}\",";
                 else
                     return false;
+                index = content.FindIndex(x => x.Contains("\"serial\""));
+                if (index >= 0)
+                    content[index] = content[index].Trim() + ",";
+                else
+                    return false;
                 content.Insert(content.ToList().Count - 1, $"\"socid\":\"{socid}\"");
                 File.WriteAllLines(filePath, content);
                 return true;
