@@ -787,6 +787,30 @@ namespace C_Box
             }
         }
 
+        public void FormatATLog(string logPath)
+        {
+            List<string> lines = null;
+            int index = -1;
+            try
+            {
+                if (string.IsNullOrEmpty(logPath))
+                    throw new ArgumentNullException("El nombre de archivo no puede ser nulo");
+                if (!File.Exists(logPath))
+                    throw new FileNotFoundException("El arcvhivo especificado no existe en el sistema");
+                lines = File.ReadAllLines(logPath).ToList();
+                index = lines.FindIndex(x => x.Contains("^PLMNSELEINFO:"));
+                if (index >= 0)
+                {
+                    lines.RemoveAt(index);
+                    File.WriteAllLines(logPath, lines.ToArray());
+                }
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
         public string ExtractIMEIFromLog(string logPath)
         {
             string lines = "";
