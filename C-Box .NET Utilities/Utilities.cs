@@ -344,8 +344,7 @@ namespace C_Box
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
-                return false;
+                throw ex;
             }
         }
 
@@ -508,7 +507,7 @@ namespace C_Box
         public string GetEnvironmentVariable(string variable)
         {
             if (string.IsNullOrEmpty(variable))
-                return "";
+                throw new ArgumentNullException("El nombre de la variable no puede ser nulo");
             return Environment.GetEnvironmentVariable(variable, EnvironmentVariableTarget.User);
         }
 
@@ -640,26 +639,6 @@ namespace C_Box
             }
         }
 
-        //public int ClearCOMPorts(string name, string arguments, int timeout, string user = "", string password = "")
-        //{
-        //    System.Security.SecureString pass = null;
-        //    pass = new System.Security.SecureString();
-        //    foreach (char c in password)
-        //        pass.AppendChar(c);
-        //    Process proc = new Process();
-        //    proc.StartInfo.FileName = name;
-        //    //proc.StartInfo.Arguments = "/C " + name;
-        //    proc.StartInfo.UseShellExecute = false;
-        //    proc.StartInfo.CreateNoWindow = true;
-        //    proc.StartInfo.RedirectStandardOutput = false;
-        //    proc.StartInfo.Verb = "runas";
-        //    proc.StartInfo.UserName = user;
-        //    proc.StartInfo.Password = pass;
-        //    proc.Start();
-        //    proc.WaitForExit(timeout);
-        //    return proc.ExitCode;
-        //}
-
         public bool KillProcessByName(string name)
         {
             if (string.IsNullOrEmpty(name))
@@ -740,16 +719,8 @@ namespace C_Box
             if (!data.Contains(" "))
                 return null;
             discoveredIMEIs = data.Replace("List of devices attached\r\n", "").Trim().Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-            //if (discoveredIMEIs.Length == 1 && nestIndex == 1)
-            //{
-            //    Array.Resize(ref discoveredIMEIs, 2);
-            //    discoveredIMEIs[1] = discoveredIMEIs[0];
-            //    discoveredIMEIs[0] = "";
-            //}
             for (int i = 0; i < discoveredIMEIs.Length; i++)
                 discoveredIMEIs[i] = discoveredIMEIs[i].Remove(discoveredIMEIs[i].IndexOf(" ")).Trim();
-            //if (discoveredIMEIs.Length > 1)
-            //    Array.Reverse(discoveredIMEIs);
             return discoveredIMEIs;
         }
 
@@ -775,8 +746,6 @@ namespace C_Box
             {
                 if (path.Length == 0)
                     return "";
-                //if (!File.Exists(path))
-                //    return "";
                 if (Path.GetFileName(path).Length < 0)
                     return "";
                 return Path.GetDirectoryName(path);
