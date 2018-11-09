@@ -181,14 +181,17 @@ namespace C_Box
         {
             if (data.Length == 0)
                 return new string[] { };
-            return data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("$GP") && x.Contains("*")).ToArray();
+            return data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("$GP") && x.Contains("*") && x.Split(',')[3].StartsWith("01")).ToArray();
         }
 
         public string[] SortGPSMessagesBySNRDesc(string[] messages)
         {
             string[] ordered = null;
-            if (messages.Length == 0)
-                return new string[] { };
+            if (messages != null)
+            {
+                if (messages.Length == 0)
+                    return null;
+            }
             ordered = messages.OrderBy(x => Convert.ToInt32(x.Split(',').Last().Remove(x.Split(',').Last().IndexOf("*")))).ToArray();
             return ordered;
         }
@@ -196,8 +199,11 @@ namespace C_Box
         public string[] SortGLONASSMessagesBySNRDesc(string[] messages)
         {
             string[] ordered = null;
-            if (messages.Length == 0)
-                return new string[] { };
+            if (messages != null)
+            {
+                if (messages.Length == 0)
+                    return new string[] { };
+            }
             ordered = messages.OrderBy(x => Convert.ToInt32(x.Split(',').Last().Remove(x.Split(',').Last().IndexOf("*")))).ToArray();
             return ordered;
         }
@@ -206,7 +212,7 @@ namespace C_Box
         {
             if (data.Length == 0)
                 return new string[] { };
-            return data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("$GL") && x.Contains("*")).ToArray();
+            return data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("$GL") && x.Contains("*") && x.Split(',')[3].StartsWith("01")).ToArray();
         }
 
         public int ExtractIDFromGPSMessage(string message)
