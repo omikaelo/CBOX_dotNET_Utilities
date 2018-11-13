@@ -1057,35 +1057,42 @@ namespace C_Box
         {
             string stdout;
             string stderr;
-            //Search for children
-            if (LaunchShell(devconPath, "findall \"*\\Vid_12D1&Sub*\"", out stdout, out stderr, 10000, false, null, null) != 0)
-                return false;
-            if (stdout.Contains("Error"))
-                return false;
-            string[] devices = stdout.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (string dev in devices)
+            try
             {
-                if (dev.Contains(parentIdPrefix.ToUpperInvariant()))
+                //Search for children
+                if (LaunchShell(devconPath, "findall \"*\\Vid_12D1&Sub*\"", out stdout, out stderr, 30000, true, "Lear", "Lear") != 0)
+                    return false;
+                if (stdout.Contains("Error") || string.IsNullOrEmpty(stdout))
+                    return false;
+                string[] devices = stdout.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (string dev in devices)
                 {
-                    if (LaunchShell(devconPath, "remove \"@" + dev.Split(':')[0].Trim() + "\"", out stdout, out stderr, 10000, false, null, null) != 0)
-                        return false;
+                    if (dev.Contains(parentIdPrefix.ToUpperInvariant()))
+                    {
+                        if (LaunchShell(devconPath, "remove \"@" + dev.Split(':')[0].Trim() + "\"", out stdout, out stderr, 30000, true, "Lear", "Lear") != 0)
+                            return false;
+                    }
                 }
+                //Now search for composite devices
+                if (LaunchShell(devconPath, "findall \"*\\VID_12D1&PID_15C3\"", out stdout, out stderr, 30000, true, "Lear", "Lear") != 0)
+                    return false;
+                if (stdout.Contains("Error") || string.IsNullOrEmpty(stdout))
+                    return false;
+                devices = stdout.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (string dev in devices)
+                {
+                    if (dev.Contains(imei))
+                    {
+                        if (LaunchShell(devconPath, "remove \"@" + dev.Split(':')[0].Trim() + "\"", out stdout, out stderr, 30000, true, "Lear", "Lear") != 0)
+                            return false;
+                    }
+                }
+                return true;
             }
-            //Now search for composote devices
-            if (LaunchShell(devconPath, "findall \"*\\Vid_12D1&PID_15C3\"", out stdout, out stderr, 10000, false, null, null) != 0)
-                return false;
-            if (stdout.Contains("Error"))
-                return false;
-            devices = stdout.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (string dev in devices)
+            catch (Exception e)
             {
-                if (dev.Contains(imei))
-                {
-                    if (LaunchShell(devconPath, "remove \"@" + dev.Split(':')[0].Trim() + "\"", out stdout, out stderr, 10000, false, null, null) != 0)
-                        return false;
-                }
+                throw e;
             }
-            return true;
         }
 
         public string GetParentIdPrefix(string imei)
