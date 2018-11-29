@@ -32,6 +32,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="AVT, Version=1.0.0.4, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\C-BOX\Utilities\dotNET\AVT_852\AVT.dll</HintPath>
+    </Reference>
     <Reference Include="C_Box.NET_Utilities, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\C-Box .NET Utilities\bin\Debug\C_Box.NET_Utilities.dll</HintPath>

@@ -6,7 +6,9 @@ using System.Management;
 using System.Diagnostics;
 using C_Box;
 using System.IO;
+using AVT;
 using System.Collections.Generic;
+using AVT.CAN;
 
 namespace Test
 {
@@ -36,7 +38,11 @@ namespace Test
                 //string d = Utilities.ConvertASCIIStringToHex("4K103528200");
                 //Console.WriteLine(Utilities.ReverseHexString(d));
                 //List<string[]> sectors = null;
-                //string[] blocks = Utilities.GetBlocksFromAppFile(@"C:\C-BOX\Variants\ConBox_Low_NAR\Firmware\Calypso\Calypso_APP_v100_nvm\app_0100_nvm_repair.bin", 2048);
+                AVT852 avt = new AVT852();
+                CANBus can0 = avt.CAN0;
+                CalypsoFlash flash = new CalypsoFlash();
+                string stdOut;
+                flash.FlashImageToCalypso(ref avt, ref can0, @"C:\C-BOX\Variants\ConBox_Low_NAR\Firmware\Calypso\Calypso_APP_v100_nvm\app_0100_nvm_repair.bin", 2048, out stdOut);
                 //int sectorCounter = blocks.Length / 256;
                 //sectors = new List<string[]>(sectorCounter);
                 //for (int i = 0; i < sectorCounter; i++)
