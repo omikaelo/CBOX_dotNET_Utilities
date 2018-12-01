@@ -40,6 +40,7 @@ namespace C_Box
         {
             List<byte[]> blocks = null;
             List<byte[]> sector = null;
+            List<string> toWrite = new List<string>(229376);
             byte[] buffer = null;
             int totalBlocks;
             int blockSize;
@@ -71,8 +72,9 @@ namespace C_Box
                 {
                     totalBlocks = buffer.Length / sectorSize; //896
                     sector = new List<byte[]>(totalBlocks);
+                    
                     byte[] aux;
-                    for (int i = 0; i < totalBlocks; i++)
+                    for (int i = 0; i < totalBlocks; i++)//896
                     {
                         aux = new byte[14 * 256];//3584
                         for (int j = 0; j < 256; j++)
@@ -84,7 +86,7 @@ namespace C_Box
                             frame[3] = 0x20;
                             frame[4] = (byte)(((0x600 + j) & 0xff00) >> 8);
                             frame[5] = (byte)(0x600 + j & 0xff);
-                            Buffer.BlockCopy(buffer, (8 * j) + (i * 256), frame, 6, 8);
+                            Buffer.BlockCopy(buffer, (8 * j) + (i * 2048), frame, 6, 8);
                             Buffer.BlockCopy(frame, 0, aux, j * frame.Length, frame.Length);
                         }
                         sector.Add(aux);
