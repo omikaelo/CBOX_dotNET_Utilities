@@ -786,6 +786,13 @@ namespace C_Box
             }
         }
 
+        public bool CheckWordInFile(string filePath, string wordToSearch)
+        {
+            if (!File.Exists(filePath))
+                return false;
+            return File.ReadAllText(filePath).Contains(wordToSearch);
+        }
+
         public string ExtractIMEIFromLog(string logPath)
         {
             string lines = "";
