@@ -839,12 +839,25 @@ namespace C_Box
             if (!File.Exists(logPath))
                 return "";
             lines = File.ReadAllText(logPath);
-            Match firstMatch = Regex.Match(lines, @"\+CSIM\:\s22\,\""([0-9A-F]+)\""\r\n\r\nOK", RegexOptions.IgnoreCase);
-            Match secondMatch = Regex.Match(lines, @"\+CSIM\:\s34\,\""([0-9A-F]+)\""\r\n\r\nOK", RegexOptions.IgnoreCase);
-            if (firstMatch.Success)
-                euiccid = firstMatch.Value.Replace("+CSIM: 22,\"", "").Replace("\"\r\n\r\nOK", "").Trim();
-            else if (secondMatch.Success)
-                euiccid = secondMatch.Value.Replace("+CSIM: 34,\"", "").Replace("\"\r\n\r\nOK", "").Trim();
+            Match m1 = Regex.Match(lines, @"\+CSIM\:\s14\,\""([0-9A-F]+)\""\r\n\r\nOK", RegexOptions.IgnoreCase);
+            Match m2 = Regex.Match(lines, @"\+CSIM\:\s22\,\""([0-9A-F]+)\""\r\n\r\nOK", RegexOptions.IgnoreCase);
+            Match m3 = Regex.Match(lines, @"\+CSIM\:\s34\,\""([0-9A-F]+)\""\r\n\r\nOK", RegexOptions.IgnoreCase);
+            if (m1.Success)
+            {
+                euiccid = m1.Value.Replace("+CSIM: 14,\"", "").Replace("\"\r\n\r\nOK", "").Trim();
+                if (!euiccid.StartsWith("4203"))
+                    return "";
+                euiccid = euiccid.Substring(4, 6);
+                if (m2.Success)
+                {
+                    var aux = m2.Value.Replace("+CSIM: 22,\"", "").Replace("\"\r\n\r\nOK", "").Trim();
+                    if (!aux.StartsWith("4507"))
+                        return "";
+                    euiccid += aux.Substring(4, 14);
+                }
+            }
+            else if (m3.Success)
+                euiccid = m3.Value.Replace("+CSIM: 34,\"", "").Replace("\"\r\n\r\nOK", "").Trim();
             else
                 euiccid = "";
             return euiccid;
