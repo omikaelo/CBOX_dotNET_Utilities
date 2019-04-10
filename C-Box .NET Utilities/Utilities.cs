@@ -857,7 +857,10 @@ namespace C_Box
                 }
             }
             else if (m3.Success)
+            {
                 euiccid = m3.Value.Replace("+CSIM: 34,\"", "").Replace("\"\r\n\r\nOK", "").Trim();
+                euiccid = euiccid.Substring(0, euiccid.Length - 4);
+            }
             else
                 euiccid = "";
             return euiccid;
