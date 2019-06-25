@@ -1186,5 +1186,12 @@ namespace C_Box
                 return "";
             return File.ReadAllText(path).Replace("\r\n", "");
         }
+
+        public string GetBookState(string[] data)
+        {
+            List<string> items = data.ToList();
+            string state = items.Skip(items.FindIndex(x => x.StartsWith("BKD000EOL")) + 4).Take(1).FirstOrDefault();
+            return state;
+        }
     }
 }
